@@ -2,7 +2,7 @@ import os
 import numpy as np
 import torch.nn.utils
 import torch.optim as optim
-
+import sys
 from time import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
@@ -33,7 +33,7 @@ class Trainer:
         self.start_epoch = 0
         self.cur_step = 0
         self.best_valid_score = 1e9
-        self.best_valid_result = None
+        self.best_valid_matches = 0
         self.optimizer = self._build_optimizer()
 
         self.checkpoint_dir = config['checkpoint_dir']
@@ -77,6 +77,19 @@ class Trainer:
         return train_loss
 
     def _valid_epoch(self, valid_data):
+        gens = []
+        with torch.no_grad():
+            for data in tqdm(valid_data):
+                generated = self.model.generate(data)
+                gens += generated
+        match=0
+        for source,gold,pred in zip(valid_data.get_reference()[0],valid_data.get_reference()[1],gens):
+            if gold == pred:
+                match += 1
+            print("SOURCE:",source)
+            print("GOLD:",gold)
+            print("PRED:",pred)
+        print("match = ",match)
         with torch.no_grad():
             self.model.eval()
             total_loss = 0.
@@ -87,7 +100,7 @@ class Trainer:
 
             valid_loss = total_loss / len(valid_data)
             ppl = np.exp(valid_loss)
-        return valid_loss, ppl
+        return valid_loss, match
 
     def _save_checkpoint(self, epoch):
         state = {
@@ -111,10 +124,18 @@ class Trainer:
         if self.is_logger:
             self.logger.info('Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch))
 
-    def _save_generated_text(self, generated_corpus):
+    def _save_generated_text(self, reference_corpus, generated_corpus):
         with open(self.saved_text_file, 'w') as fin:
-            for tokens in generated_corpus:
-                fin.write(' '.join(tokens) + '\n')
+            for source,goldtokens,predtokens in zip(reference_corpus[0],reference_corpus[1],generated_corpus):
+                if goldtokens != predtokens:
+                    fin.write('NO MATCH \n')
+                    fin.write(' '.join(source)+'\n')
+                    fin.write('Gold: '+' '.join(goldtokens) + '\n') 
+                    fin.write('Pred: '+' '.join(predtokens) + '\n')
+                else:
+                    fin.write(' '.join(source)+'\n')
+                    fin.write('Gold: '+' '.join(goldtokens) + '\n') 
+                    fin.write('Pred: '+' '.join(predtokens) + '\n')
 
     def fit(self, train_data, valid_data, saved=True):
         if self.start_epoch >= self.epochs or self.epochs <= 0:
@@ -131,22 +152,25 @@ class Trainer:
                 self.logger.info(train_loss_output)
 
             if self.plot:
-                self.writer.add_scalar('loss', train_loss, epoch_idx)
+                self.writer.add_scalar('train_loss', train_loss, epoch_idx)
 
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
-                valid_score, valid_result = self._valid_epoch(valid_data)
+                valid_score, valid_matches = self._valid_epoch(valid_data)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
-                    valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step
+                    valid_matches, self.best_valid_matches, self.cur_step, max_step=self.stopping_step
                 )
                 valid_end_time = time()
 
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_loss: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid ppl: {}'.format(valid_result)
+                if self.plot:
+                    self.writer.add_scalar('valid_loss', valid_score, epoch_idx)
+                    self.writer.add_scalar('val_matches', valid_matches, epoch_idx)
+                valid_matches_output = 'matches: {}'.format(valid_matches)
                 if self.is_logger:
                     self.logger.info(valid_score_output)
-                    self.logger.info(valid_result_output)
+                    self.logger.info(valid_matches_output)
 
                 if update_flag:
                     if saved:
@@ -154,14 +178,14 @@ class Trainer:
                         update_output = 'Saving current best: %s' % self.saved_model_file
                         if self.is_logger:
                             self.logger.info(update_output)
-                    self.best_valid_result = valid_result
+                    self.best_valid_matches = valid_matches
                 if stop_flag:
                     stop_output = ('Finished training, best eval result in epoch %d' %
                                    (epoch_idx - self.cur_step * self.eval_step))
                     if self.is_logger:
                         self.logger.info(stop_output)
                     break
-        return self.best_valid_score, self.best_valid_result
+        return self.best_valid_score, self.best_valid_matches
 
     @torch.no_grad()
     def evaluate(self, eval_data, model_file=None):
@@ -182,8 +206,16 @@ class Trainer:
             for data in tqdm(eval_data):
                 generated = self.model.generate(data)
                 generated_corpus.extend(generated)
-        self._save_generated_text(generated_corpus)
         reference_corpus = eval_data.get_reference()
-        result = self.evaluator.evaluate(generated_corpus, reference_corpus)
+        self._save_generated_text(reference_corpus,generated_corpus)
+        match=0
+        for source,gold,pred in zip(reference_corpus[0],reference_corpus[1],generated_corpus):
+            if gold == pred:
+                match += 1
+            print("SOURCE:",source)
+            print("GOLD:",gold)
+            print("PRED:",pred)
+        print("match = ",match)
+        #result = self.evaluator.evaluate(generated_corpus, reference_corpus)
 
-        return result
+        return float(match/len(reference_corpus[0]))

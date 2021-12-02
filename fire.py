@@ -31,5 +31,5 @@ def train(config):
 
 if __name__ == '__main__':
     config = Config(config_dict={'test_only': False,
-                                 'load_experiment': None})
+                                 'load_experiment': None}) #'saved2/Fire-At-Dec-01-2021_21-47-08.pth'})
     train(config)

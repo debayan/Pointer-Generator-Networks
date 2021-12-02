@@ -31,6 +31,7 @@ class Dataset:
             setattr(self, f'{prefix}_data', dict())
         self.source_text = []
         self.target_text = []
+        self.source_vector = []
 
     def _init_special_token(self):
         self.padding_token = SpecialTokens.PAD
@@ -65,31 +66,42 @@ class Dataset:
     def _load_data(self):
         self.logger.info('Loading data from scratch')
         for prefix in ['train', 'valid', 'test']:
-            source_file = os.path.join(self.dataset_path, f'{prefix}.src')
-            target_file = os.path.join(self.dataset_path, f'{prefix}.tgt')
+            source_file = os.path.join(self.dataset_path, f'lcq2_{prefix}_pnel_pred_gold_vectors.json')
+            target_file = os.path.join(self.dataset_path, f'lcq2_{prefix}_pnel_pred_gold_vectors.json')
 
-            source_text = load_data(source_file, self.source_max_length)
-            target_text = load_data(target_file, self.target_max_length)
+            source_text,target_text,source_vector = load_data(source_file, self.source_max_length)
 
             self.source_text.append(source_text)
             self.target_text.append(target_text)
+            self.source_vector.append(source_vector)
         self.logger.info('Load finished')
 
     def _build_vocab(self):
         self.logger.info('Building vocab')
-        text_data = self.source_text + self.target_text
+        f = open('wikidatasparqlvocab.txt')
+        vocab = []
+        for line in f.readlines():
+            x = line.strip()
+            if not x:
+                x = ' '
+            vocab.append(x)
+        #text_data = self.source_text + self.target_text
+        #self.idx2token, self.token2idx, self.max_vocab_size = build_vocab(
+        #    text_data, self.max_vocab_size, self.special_token_list
+        #)
         self.idx2token, self.token2idx, self.max_vocab_size = build_vocab(
-            text_data, self.max_vocab_size, self.special_token_list
+            vocab, self.max_vocab_size, self.special_token_list
         )
         self.logger.info('Build finished')
 
     def _build_data(self):
         self.logger.info('Building data')
         for i, prefix in enumerate(['train', 'valid', 'test']):
-            data_dict = text2idx(self.source_text[i], self.target_text[i], self.token2idx, self.is_pgen)
+            data_dict = text2idx(self.source_text[i], self.target_text[i], self.source_vector[i], self.token2idx, self.is_pgen)
             for key, value in data_dict.items():
                 getattr(self, f'{prefix}_data')[key] = value
             getattr(self, f'{prefix}_data')['source_text'] = self.source_text[i]
+            getattr(self, f'{prefix}_data')['source_vector'] = self.source_vector[i]
             getattr(self, f'{prefix}_data')['target_text'] = self.target_text[i]
         self.logger.info('Build finished')
 

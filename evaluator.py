@@ -1,8 +1,8 @@
 import os
 import tempfile
 import logging
-from files2rouge import settings, utils
-from pyrouge import Rouge155
+#from files2rouge import settings, utils
+#from pyrouge import Rouge155
 
 
 class Evaluator:
@@ -45,16 +45,16 @@ class Evaluator:
                 ignore_empty_reference=ignore_empty_reference,
                 ignore_empty_summary=ignore_empty_summary
             )
-            r = Rouge155(rouge_dir=os.path.dirname(s.data['ROUGE_path']), log_level=logging.ERROR, stemming=stemming)
-            r.system_dir = sys_root
-            r.model_dir = model_root
-            r.system_filename_pattern = r's.(\d+).txt'
-            r.model_filename_pattern = 'm.[A-Z].#ID#.txt'
-            data_arg = "-e %s" % s.data['ROUGE_data']
-            rouge_args_str = "%s %s" % (data_arg, self.rouge_args)
-            output = r.convert_and_evaluate(rouge_args=rouge_args_str)
-            res = self._get_info(output)
-        return res
+#            r = Rouge155(rouge_dir=os.path.dirname(s.data['ROUGE_path']), log_level=logging.ERROR, stemming=stemming)
+#            r.system_dir = sys_root
+#            r.model_dir = model_root
+#            r.system_filename_pattern = r's.(\d+).txt'
+#            r.model_filename_pattern = 'm.[A-Z].#ID#.txt'
+#            data_arg = "-e %s" % s.data['ROUGE_data']
+#            rouge_args_str = "%s %s" % (data_arg, self.rouge_args)
+#            output = r.convert_and_evaluate(rouge_args=rouge_args_str)
+#            res = self._get_info(output)
+        return 0#res
 
     def _get_info(self, input_str):
         rouge_list = input_str.replace("---------------------------------------------",
@@ -82,8 +82,8 @@ class Evaluator:
                 'ignore_empty_summary': False,
                 'stemming': True
             }
-            res = self._calc_rouge(calc_args)
-        return res
+            #res = self._calc_rouge(calc_args)
+        return 0#res
 
     def evaluate(self, generated_corpus, reference_corpus):
         return self._calc_metrics_info(generated_corpus=generated_corpus, reference_corpus=reference_corpus)

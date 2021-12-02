@@ -1,10 +1,10 @@
-embedding_size: 128
-hidden_size: 256
+embedding_size: 500
+hidden_size: 1024
 num_enc_layers: 1
 bidirectional: True
 num_dec_layers: 1
 dropout_ratio: 0.2
-decoding_strategy: 'beam_search'
+decoding_strategy: 'greedy_search'
 beam_size: 4
 is_attention: True
 is_pgen: True

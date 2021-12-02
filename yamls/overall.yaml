@@ -4,22 +4,21 @@ use_gpu: True
 seed: 2021
 state: INFO
 reproducibility: False
-data_path: 'data/'
-checkpoint_dir: 'saved/'
-generated_text_dir: 'generated/'
+data_path: 'lcq2data3/'
+checkpoint_dir: 'saved3/'
+generated_text_dir: 'generated3/'
 plot: True
 
 # training settings
 epochs: 150
-warmup_epochs: 10
-iters_per_epoch: 400
+warmup_epochs: 1
+iters_per_epoch: 1400
 train_batch_size: 32
-learner: schedule
-learning_rate: 0.001
+learner: adam
+learning_rate: 0.0001
 eval_step: 1
 stopping_step: 3
 grad_clip: 1.0
 
 # evaluation settings
-eval_batch_size: 32
-
+eval_batch_size: 50

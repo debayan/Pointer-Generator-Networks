@@ -1,26 +1,40 @@
 import torch
 import collections
-
+import json
+import sys
 from enum_type import SpecialTokens
 
 
 def load_data(dataset_path, max_length):
     with open(dataset_path, "r", encoding='utf-8') as fin:
-        text = []
+        source_text = []
+        target_text = []
+        source_vector = []
         for line in fin:
-            line = line.strip().lower()
-            words = line.split()
-            text.append(words[:max_length])
-    return text
-
+            line = line.strip()
+            d = json.loads(line)
+            words = [x.lower() for x in d['goldentrelvectorstring']]
+            print(d['sparql_wikidata'])
+            sparql = d['sparql_wikidata'].replace('(',' ( ').replace(')',' ) ').replace('{',' { ').replace('}',' } ').replace('wd:','').replace('wdt:','').replace('p:','').replace('ps:','').replace('pq:','').replace(',',' , ').replace(",'",", '").replace("'"," ' ").lower()
+            print(sparql)
+            newvars = ['?vr0','?vr1','?vr2','?vr3','?vr4','?vr5']
+            sparql_split = sparql.split()
+            variables = set([x for x in sparql_split if x[0] == '?'])
+            print(variables)
+            for idx,var in enumerate(sorted(variables)):
+                sparql = sparql.replace(var,newvars[idx])
+            print(sparql)
+            vector = d['goldentrelvector']
+        
+            source_text.append(words[:max_length])
+            source_vector.append(vector[:max_length])
+            target_text.append([x.lower() for x in sparql.split()[:max_length]])
+    return source_text,target_text,source_vector
 
 def build_vocab(text, max_vocab_size, special_token_list):
     word_list = list()
-    for group in text:
-        for doc in group:
-            for word in doc:
-                if word not in ['nostalgia', 'gone', 'water', 'wine', 'cherish']:
-                    word_list.append(word)
+    for word in text:
+        word_list.append(word)
 
     token_count = [(count, token) for token, count in collections.Counter(word_list).items()]
     token_count.sort(reverse=True)
@@ -34,9 +48,10 @@ def build_vocab(text, max_vocab_size, special_token_list):
     return idx2token, token2idx, max_vocab_size
 
 
-def text2idx(source_text, target_text, token2idx, is_gen=False):
-    data_dict = {'source_idx': [], 'source_length': [],
-                 'input_target_idx': [], 'output_target_idx': [], 'target_length': []}
+def text2idx(source_text, target_text, source_vector, token2idx, is_gen=False):
+    print(token2idx)
+    data_dict = {'source_idx': [], 'source_length': [], 'source_vector': [],
+                 'input_target_idx': [], 'output_target_idx': [], 'target_length': [], 'source_sent': [], 'target_sent': [] }
 
     if is_gen:
         data_dict['extended_source_idx'] = []
@@ -60,9 +75,12 @@ def text2idx(source_text, target_text, token2idx, is_gen=False):
 
         data_dict['source_idx'].append(source_idx)
         data_dict['source_length'].append(len(source_idx))
+        data_dict['source_vector'].append(source_vector)
         data_dict['input_target_idx'].append(input_target_idx)
         data_dict['output_target_idx'].append(output_target_idx)
         data_dict['target_length'].append(len(input_target_idx))
+        data_dict['source_sent'].append(source_sent)
+        data_dict['target_sent'].append(target_sent)
 
     return data_dict
 
@@ -103,6 +121,15 @@ def pad_sequence(idx, length, padding_idx):
     for sent_idx, sent_length in zip(idx, length):
         new_idx.append(sent_idx + [padding_idx] * (max_length - sent_length))
     new_idx = torch.LongTensor(new_idx)
+    length = torch.LongTensor(length)
+    return new_idx, length
+
+def pad_sequence_vector(idx, length):
+    max_length = max(length)
+    new_idx = []
+    for sent_idx, sent_length in zip(idx, length):
+        new_idx.append(sent_idx + [500*[-2.0]] * (max_length - sent_length))
+    new_idx = torch.FloatTensor(new_idx)
     length = torch.LongTensor(length)
     return new_idx, length
 

@@ -82,13 +82,13 @@ def init_seed(seed, reproducibility):
         torch.backends.cudnn.deterministic = False
 
 
-def early_stopping(value, best, cur_step, max_step):
+def early_stopping(matches, best, cur_step, max_step):
     stop_flag = False
     update_flag = False
 
-    if value < best:
+    if matches > best:
         cur_step = 0
-        best = value
+        best = matches
         update_flag = True
     else:
         cur_step += 1

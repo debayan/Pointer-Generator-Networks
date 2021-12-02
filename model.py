@@ -47,8 +47,8 @@ class Model(AbstractModel):
 
         self.context_size = self.hidden_size
 
-        self.source_token_embedder = nn.Embedding(self.max_vocab_size, self.embedding_size,
-                                                  padding_idx=self.padding_token_idx)
+        #self.source_token_embedder = nn.Embedding(self.max_vocab_size, self.embedding_size,
+        #                                          padding_idx=self.padding_token_idx)
         self.target_token_embedder = nn.Embedding(self.max_vocab_size, self.embedding_size,
                                                   padding_idx=self.padding_token_idx)
         self.encoder = Encoder(
@@ -62,8 +62,8 @@ class Model(AbstractModel):
             is_attention=self.is_attention,  is_pgen=self.is_pgen, is_coverage=self.is_coverage
         )
 
-    def encode(self, source_idx, source_length):
-        source_embeddings = self.source_token_embedder(source_idx)
+    def encode(self, source_idx, source_vector, source_length):
+        source_embeddings = source_vector#self.source_token_embedder(source_idx)
         encoder_outputs, encoder_hidden_states = self.encoder(source_embeddings, source_length)
 
         if self.bidirectional:
@@ -77,8 +77,9 @@ class Model(AbstractModel):
         generated_corpus = []
 
         source_idx = corpus['source_idx']
+        source_vector = corpus['source_vector']
         source_length = corpus['source_length']
-        encoder_outputs, encoder_hidden_states = self.encode(source_idx, source_length)
+        encoder_outputs, encoder_hidden_states = self.encode(source_idx, source_vector, source_length)
 
         batch_size = len(source_idx)
         src_len = len(source_idx[0])
@@ -110,7 +111,6 @@ class Model(AbstractModel):
                     self.device, self.idx2token,
                     is_attention=self.is_attention, is_pgen=self.is_pgen, is_coverage=self.is_coverage
                 )
-
             for gen_id in range(self.target_max_length):
                 input_embeddings = self.target_token_embedder(input_target_idx)
 
@@ -134,7 +134,6 @@ class Model(AbstractModel):
                         gen_id, vocab_dists, decoder_hidden_states, kwargs)
                     if hypothesis.stop():
                         break
-
             if self.strategy == 'beam_search':
                 generated_tokens = hypothesis.generate()
 
@@ -145,8 +144,9 @@ class Model(AbstractModel):
     def forward(self, corpus):
         # Encoder
         source_idx = corpus['source_idx']
+        source_vector = corpus['source_vector']
         source_length = corpus['source_length']
-        encoder_outputs, encoder_hidden_states = self.encode(source_idx, source_length)
+        encoder_outputs, encoder_hidden_states = self.encode(source_idx, source_vector, source_length)
 
         batch_size = len(source_idx)
         src_len = len(source_idx[0])

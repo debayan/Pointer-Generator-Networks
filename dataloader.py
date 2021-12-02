@@ -2,7 +2,7 @@ import math
 import torch
 import random
 
-from data_utils import pad_sequence, get_extra_zeros, article2ids
+from data_utils import pad_sequence, pad_sequence_vector, get_extra_zeros, article2ids
 
 
 class Dataloader:
@@ -76,6 +76,8 @@ class Dataloader:
         source_idx = self.source_idx[self.pr:self.pr + self.step]
         source_length = self.source_length[self.pr:self.pr + self.step]
         source_idx, source_length = pad_sequence(source_idx, source_length, self.padding_token_idx)
+        #sys.exit(1)
+        source_vector,source_vector_length = pad_sequence_vector(self.source_vector[self.pr:self.pr + self.step], source_length)
 
         input_target_idx = self.input_target_idx[self.pr:self.pr + self.step]
         output_target_idx = self.output_target_idx[self.pr:self.pr + self.step]
@@ -86,6 +88,7 @@ class Dataloader:
 
         batch_data = {
             'source_idx': source_idx.to(self.device),
+            'source_vector': source_vector.to(self.device),
             'source_length': source_length.to(self.device),
             'input_target_idx': input_target_idx.to(self.device),
             'output_target_idx': output_target_idx.to(self.device),
@@ -105,7 +108,7 @@ class Dataloader:
         return batch_data
 
     def get_reference(self):
-        return self.target_text
+        return self.source_text,self.target_text
 
     def interface(self, sentence):
         source_text = sentence.strip().lower().split()
