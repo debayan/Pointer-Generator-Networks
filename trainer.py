@@ -219,3 +219,30 @@ class Trainer:
         #result = self.evaluator.evaluate(generated_corpus, reference_corpus)
 
         return float(match/len(reference_corpus[0]))
+
+    @torch.no_grad()
+    def evaluate_single(self, eval_data, model_file=None):
+        if model_file:
+            checkpoint_file = model_file
+        else:
+            checkpoint_file = self.saved_model_file
+        checkpoint = torch.load(checkpoint_file)
+        self.model.load_state_dict(checkpoint['state_dict'])
+        message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
+        if self.is_logger:
+            self.logger.info(message_output)
+
+        self.model.eval()
+
+        generated_corpus = []
+        with torch.no_grad():
+            for data in tqdm(eval_data):
+                generated = self.model.generate(data)
+                generated_corpus.extend(generated)
+        reference_corpus = eval_data.get_reference()
+        #self._save_generated_text(reference_corpus,generated_corpus)
+        match=0
+        for source,pred in zip(reference_corpus[0],generated_corpus):
+            print("SOURCE:",source)
+            print("PRED:",pred)
+        return None

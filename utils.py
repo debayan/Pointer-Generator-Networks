@@ -9,11 +9,22 @@ from dataset import Dataset
 from dataloader import Dataloader
 
 
-def data_preparation(config):
-    dataset = Dataset(config)
+def data_preparation(config, inputstring = None, inputvecs = None):
+    dataset = Dataset(config, inputstring, inputvecs)
 
     test_dataset = copy.copy(dataset)
-    prefixes = ['test']
+
+    prefixes = ['test_single']
+
+    if config['test_single']:
+        for prefix in prefixes:
+            dataset = test_dataset#locals()[f'{prefix}_dataset']
+            content = getattr(dataset, f'{prefix}_data')
+            for key, value in content.items():
+                setattr(dataset, key, value)
+        test_data = Dataloader(name='test', config=config, dataset=test_dataset, batch_size=1, drop_last=False )
+        return test_data,None,None
+    
     if not config['test_only']:
         train_dataset = copy.copy(dataset)
         valid_dataset = copy.copy(dataset)

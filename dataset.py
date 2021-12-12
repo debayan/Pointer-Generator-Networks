@@ -1,12 +1,12 @@
 import os
 import torch
 from logging import getLogger
-from data_utils import load_data, build_vocab, text2idx
+from data_utils import load_data, build_vocab, text2idx,load_single_data
 from enum_type import SpecialTokens
 
 
 class Dataset:
-    def __init__(self, config):
+    def __init__(self, config, inputstring = None, inputvector = None):
         self.config = config
         self.dataset_path = config['data_path']
         self.max_vocab_size = config['max_vocab_size']
@@ -14,6 +14,14 @@ class Dataset:
         self.target_max_length = config['tgt_len']
         self.is_pgen = config['is_pgen'] and config['is_attention']
         self.test_only = config['test_only']
+        self.inputstring = inputstring
+        self.inputvector = inputvector
+        if self.config['test_single']:
+            self.logger = getLogger()
+            self._init_special_token()
+            self._get_preset()
+            self._from_scratch()
+            return
 
         self.logger = getLogger()
         self._init_special_token()
@@ -27,7 +35,7 @@ class Dataset:
             self._info()
 
     def _get_preset(self):
-        for prefix in ['train', 'valid', 'test']:
+        for prefix in ['train', 'valid', 'test', 'test_single']:
             setattr(self, f'{prefix}_data', dict())
         self.source_text = []
         self.target_text = []
@@ -65,6 +73,13 @@ class Dataset:
 
     def _load_data(self):
         self.logger.info('Loading data from scratch')
+        if self.config['test_single']:
+            source_text,target_text,source_vector = load_single_data(self.inputstring,self.inputvector, self.source_max_length)
+            self.source_text.append(source_text)
+            self.target_text.append(target_text)
+            self.source_vector.append(source_vector)
+            return
+            
         for prefix in ['train', 'valid', 'test']:
             source_file = os.path.join(self.dataset_path, f'lcq2_{prefix}_pnel_pred_gold_vectors.json')
             target_file = os.path.join(self.dataset_path, f'lcq2_{prefix}_pnel_pred_gold_vectors.json')
@@ -96,7 +111,16 @@ class Dataset:
 
     def _build_data(self):
         self.logger.info('Building data')
-        for i, prefix in enumerate(['train', 'valid', 'test']):
+        if self.config['test_single']:
+            prefix = 'test_single'
+            data_dict = text2idx(self.source_text[0], self.target_text[0], self.source_vector[0], self.token2idx, self.is_pgen)
+            for key, value in data_dict.items():
+                getattr(self, f'{prefix}_data')[key] = value
+            getattr(self, f'{prefix}_data')['source_text'] = self.source_text[0]
+            getattr(self, f'{prefix}_data')['source_vector'] = self.source_vector[0]
+            getattr(self, f'{prefix}_data')['target_text'] = self.target_text[0]
+            return
+        for i, prefix in enumerate(['train', 'valid', 'test','test_single']):
             data_dict = text2idx(self.source_text[i], self.target_text[i], self.source_vector[i], self.token2idx, self.is_pgen)
             for key, value in data_dict.items():
                 getattr(self, f'{prefix}_data')[key] = value
@@ -106,6 +130,8 @@ class Dataset:
         self.logger.info('Build finished')
 
     def _dump_data(self):
+        if self.config['test_single']:
+            return
         self.logger.info('Dumping data')
         for prefix in ['train', 'valid', 'test']:
             filename = os.path.join(self.dataset_path,

@@ -5,6 +5,7 @@ from trainer import Trainer
 from utils import init_seed
 from logger import init_logger
 from utils import data_preparation
+import sys
 
 
 def train(config):
@@ -13,6 +14,8 @@ def train(config):
     logger = getLogger()
     logger.info(config)
     test_data, train_data, valid_data = data_preparation(config)
+    print(test_data)
+    sys.exit(1)
     model = Model(config).to(config['device'])
     trainer = Trainer(config, model)
 
@@ -30,6 +33,6 @@ def train(config):
 
 
 if __name__ == '__main__':
-    config = Config(config_dict={'test_only': False,
-                                 'load_experiment': None}) #'saved2/Fire-At-Dec-01-2021_21-47-08.pth'})
+    config = Config(config_dict={'test_only': True,
+                                 'load_experiment': 'saved3/Fire-At-Dec-02-2021_12-47-22.pth'})
     train(config)

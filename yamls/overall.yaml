@@ -4,7 +4,7 @@ use_gpu: True
 seed: 2021
 state: INFO
 reproducibility: False
-data_path: 'lcq2data3/'
+data_path: 'singleexample1/'
 checkpoint_dir: 'saved3/'
 generated_text_dir: 'generated3/'
 plot: True

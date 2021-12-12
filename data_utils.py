@@ -5,6 +5,16 @@ import sys
 from enum_type import SpecialTokens
 
 
+def load_single_data(inputstring, inputvector, max_length):
+    source_text = []
+    target_text = [['wrong taget text']]
+    source_vector = []
+    words = [x.lower() for x in inputstring]
+    vector = [x[0] for x in inputvector]
+    source_text.append(words[:max_length])
+    source_vector.append(vector[:max_length])
+    return source_text,target_text,source_vector
+
 def load_data(dataset_path, max_length):
     with open(dataset_path, "r", encoding='utf-8') as fin:
         source_text = []
@@ -47,7 +57,6 @@ def build_vocab(text, max_vocab_size, special_token_list):
     token2idx = dict(zip(tokens, range(max_vocab_size)))
     return idx2token, token2idx, max_vocab_size
 
-
 def text2idx(source_text, target_text, source_vector, token2idx, is_gen=False):
     print(token2idx)
     data_dict = {'source_idx': [], 'source_length': [], 'source_vector': [],
@@ -62,6 +71,7 @@ def text2idx(source_text, target_text, source_vector, token2idx, is_gen=False):
     unknown_idx = token2idx[SpecialTokens.UNK]
 
     for source_sent, target_sent in zip(source_text, target_text):
+        print(source_sent,target_sent)
         source_idx = [token2idx.get(word, unknown_idx) for word in source_sent]
         input_target_idx = [sos_idx] + [token2idx.get(word, unknown_idx) for word in target_sent]
 
