@@ -58,7 +58,6 @@ def build_vocab(text, max_vocab_size, special_token_list):
     return idx2token, token2idx, max_vocab_size
 
 def text2idx(source_text, target_text, source_vector, token2idx, is_gen=False):
-    print(token2idx)
     data_dict = {'source_idx': [], 'source_length': [], 'source_vector': [],
                  'input_target_idx': [], 'output_target_idx': [], 'target_length': [], 'source_sent': [], 'target_sent': [] }
 
@@ -71,7 +70,6 @@ def text2idx(source_text, target_text, source_vector, token2idx, is_gen=False):
     unknown_idx = token2idx[SpecialTokens.UNK]
 
     for source_sent, target_sent in zip(source_text, target_text):
-        print(source_sent,target_sent)
         source_idx = [token2idx.get(word, unknown_idx) for word in source_sent]
         input_target_idx = [sos_idx] + [token2idx.get(word, unknown_idx) for word in target_sent]
 

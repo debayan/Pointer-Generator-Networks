@@ -245,4 +245,4 @@ class Trainer:
         for source,pred in zip(reference_corpus[0],generated_corpus):
             print("SOURCE:",source)
             print("PRED:",pred)
-        return None
+        return pred
