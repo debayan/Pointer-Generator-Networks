@@ -81,8 +81,8 @@ class Dataset:
             return
             
         for prefix in ['train', 'valid', 'test']:
-            source_file = os.path.join(self.dataset_path, f'lcq2_{prefix}_pnel_pred_gold_vectors.json')
-            target_file = os.path.join(self.dataset_path, f'lcq2_{prefix}_pnel_pred_gold_vectors.json')
+            source_file = os.path.join(self.dataset_path, f'{prefix}.txt')
+            target_file = os.path.join(self.dataset_path, f'{prefix}.txt')
 
             source_text,target_text,source_vector = load_data(source_file, self.source_max_length)
 
@@ -120,7 +120,7 @@ class Dataset:
             getattr(self, f'{prefix}_data')['source_vector'] = self.source_vector[0]
             getattr(self, f'{prefix}_data')['target_text'] = self.target_text[0]
             return
-        for i, prefix in enumerate(['train', 'valid', 'test','test_single']):
+        for i, prefix in enumerate(['train', 'valid', 'test']):
             data_dict = text2idx(self.source_text[i], self.target_text[i], self.source_vector[i], self.token2idx, self.is_pgen)
             for key, value in data_dict.items():
                 getattr(self, f'{prefix}_data')[key] = value

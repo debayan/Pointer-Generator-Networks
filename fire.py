@@ -14,8 +14,6 @@ def train(config):
     logger = getLogger()
     logger.info(config)
     test_data, train_data, valid_data = data_preparation(config)
-    print(test_data)
-    sys.exit(1)
     model = Model(config).to(config['device'])
     trainer = Trainer(config, model)
 
@@ -33,6 +31,6 @@ def train(config):
 
 
 if __name__ == '__main__':
-    config = Config(config_dict={'test_only': True,
-                                 'load_experiment': 'saved3/Fire-At-Dec-02-2021_12-47-22.pth'})
+#    config = Config(config_dict={'test_only': True,'load_experiment': 'saved_ppspq1/Fire-At-Dec-14-2021_16-51-40.pth'})
+    config = Config(config_dict={'test_only': False})   
     train(config)

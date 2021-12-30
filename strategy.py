@@ -42,7 +42,8 @@ class Beam_Search:
         if len(self.completed_hypotheses) == 0:
             return self.hypothetic_token[0][1:]
         else:
-            return max(self.completed_hypotheses, key=lambda hyp: hyp[1])[0]
+            #return max(self.completed_hypotheses, key=lambda hyp: hyp[1])[0]
+            return self.completed_hypotheses
 
     def step(self, gen_idx, vocab_dists, decoder_hidden_states, kwargs=None):
         vocab_dists = torch.log(vocab_dists.squeeze(1))

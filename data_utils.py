@@ -3,6 +3,7 @@ import collections
 import json
 import sys
 from enum_type import SpecialTokens
+from random import randrange
 
 
 def load_single_data(inputstring, inputvector, max_length):
@@ -10,7 +11,7 @@ def load_single_data(inputstring, inputvector, max_length):
     target_text = [['wrong taget text']]
     source_vector = []
     words = [x.lower() for x in inputstring]
-    vector = [x[0] for x in inputvector]
+    vector = [[-1]+x[0][1:] for x in inputvector]
     source_text.append(words[:max_length])
     source_vector.append(vector[:max_length])
     return source_text,target_text,source_vector
@@ -25,19 +26,24 @@ def load_data(dataset_path, max_length):
             d = json.loads(line)
             words = [x.lower() for x in d['goldentrelvectorstring']]
             print(d['sparql_wikidata'])
-            sparql = d['sparql_wikidata'].replace('(',' ( ').replace(')',' ) ').replace('{',' { ').replace('}',' } ').replace('wd:','').replace('wdt:','').replace('p:','').replace('ps:','').replace('pq:','').replace(',',' , ').replace(",'",", '").replace("'"," ' ").lower()
+            sparql = d['sparql_wikidata'].replace('(',' ( ').replace(')',' ) ').replace('{',' { ').replace('}',' } ').replace('wd:','wd: ').replace('wdt:','wdt: ').replace('p:','p: ').replace('ps:','ps: ').replace('pq:','pq: ').replace(',',' , ').replace(",'",", '").replace("'"," ' ").lower()
             print(sparql)
             newvars = ['?vr0','?vr1','?vr2','?vr3','?vr4','?vr5']
             sparql_split = sparql.split()
             variables = set([x for x in sparql_split if x[0] == '?'])
             print(variables)
             for idx,var in enumerate(sorted(variables)):
+                if var == '?maskvar1':
+                    continue         
                 sparql = sparql.replace(var,newvars[idx])
             print(sparql)
             vector = d['goldentrelvector']
         
             source_text.append(words[:max_length])
             source_vector.append(vector[:max_length])
+            if len(words) != len(vector):
+                print("ERROR:",words)
+                sys.exit(1)
             target_text.append([x.lower() for x in sparql.split()[:max_length]])
     return source_text,target_text,source_vector
 
@@ -136,7 +142,7 @@ def pad_sequence_vector(idx, length):
     max_length = max(length)
     new_idx = []
     for sent_idx, sent_length in zip(idx, length):
-        new_idx.append(sent_idx + [500*[-2.0]] * (max_length - sent_length))
+        new_idx.append(sent_idx + [969*[-2.0]] * (max_length - sent_length))
     new_idx = torch.FloatTensor(new_idx)
     length = torch.LongTensor(length)
     return new_idx, length

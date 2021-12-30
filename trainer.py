@@ -218,7 +218,7 @@ class Trainer:
         print("match = ",match)
         #result = self.evaluator.evaluate(generated_corpus, reference_corpus)
 
-        return float(match/len(reference_corpus[0]))
+        return float(match/float(len(reference_corpus[0])+0.1))
 
     @torch.no_grad()
     def evaluate_single(self, eval_data, model_file=None):
@@ -238,11 +238,15 @@ class Trainer:
         with torch.no_grad():
             for data in tqdm(eval_data):
                 generated = self.model.generate(data)
-                generated_corpus.extend(generated)
+                generated_cpu = []
+                for gen in generated[0]:
+                    generated_cpu.append((gen[0],float(gen[1].cpu().numpy())))
+                print("gencpu",generated_cpu)
+                generated_cpu.sort(key = lambda x:x[1],reverse=True )
+                generated_corpus.extend(generated_cpu)
         reference_corpus = eval_data.get_reference()
         #self._save_generated_text(reference_corpus,generated_corpus)
         match=0
-        for source,pred in zip(reference_corpus[0],generated_corpus):
-            print("SOURCE:",source)
-            print("PRED:",pred)
-        return pred
+        print("SOURCE:",reference_corpus[0])
+        print("PRED:",generated_cpu)
+        return generated_cpu

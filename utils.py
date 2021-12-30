@@ -14,9 +14,9 @@ def data_preparation(config, inputstring = None, inputvecs = None):
 
     test_dataset = copy.copy(dataset)
 
-    prefixes = ['test_single']
-
+    prefixes = []
     if config['test_single']:
+        prefixes = ['test_single']
         for prefix in prefixes:
             dataset = test_dataset#locals()[f'{prefix}_dataset']
             content = getattr(dataset, f'{prefix}_data')
